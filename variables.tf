@@ -30,7 +30,7 @@ variable "versioning_is_enabled" {
 
 variable "logging_target_bucket" {
   description = "(Optional) A settings of bucket logging (documented below)."
-  default     = ""
+  default = ""
 }
 
 variable "lifecycle_rule_is_enabled" {
@@ -89,6 +89,7 @@ variable "s3_actions" {
 
   default = [
     "s3:GetObject",
+    "s3:ListBucket",
   ]
 }
 

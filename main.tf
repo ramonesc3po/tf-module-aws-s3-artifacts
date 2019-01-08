@@ -13,7 +13,21 @@ locals {
   ]
 }
 
-data "aws_iam_policy_document" "bucket" {
+resource "aws_s3_bucket_policy" "bucket_no_encrypt" {
+  count = "${var.is_encrypted ? 0 : 1}"
+
+  bucket = "${aws_s3_bucket.bucket_no_encrypt.id}"
+  policy = "${data.aws_iam_policy_document.artifacts.json}"
+}
+
+resource "aws_s3_bucket_policy" "bucket_encrypt" {
+  count = "${var.is_encrypted ? 1 : 0}"
+
+  bucket = "${aws_s3_bucket.bucket_encrypt.id}"
+  policy = "${data.aws_iam_policy_document.artifacts.json}"
+}
+
+data "aws_iam_policy_document" "artifacts" {
   statement {
     sid    = "PermissaoEC2ParaBucketArtifacts${var.bucket_tier}"
     effect = "Allow"
@@ -26,13 +40,9 @@ data "aws_iam_policy_document" "bucket" {
       ]
     }
 
-    actions = [
-      "${var.s3_actions}",
-    ]
+    actions = "${var.s3_actions}"
 
-    resources = [
-      "${concat(var.s3_resources, local.default_resources, list(""))}",
-    ]
+    resources = "${concat(local.default_resources,var.s3_resources)}"
   }
 }
 
@@ -41,7 +51,6 @@ resource "aws_s3_bucket" "bucket_no_encrypt" {
 
   bucket        = "${var.bucket_organization}-${var.bucket_name}-${var.bucket_region}-${var.bucket_tier}"
   region        = "${var.bucket_region}"
-  policy        = "${data.aws_iam_policy_document.bucket.json}"
   acl           = "${var.acl}"
   force_destroy = "${var.force_destroy}"
 
@@ -66,10 +75,6 @@ resource "aws_s3_bucket" "bucket_no_encrypt" {
     expiration {
       days = "${var.expiration_days}"
     }
-  }
-
-  logging {
-    target_bucket = "${var.logging_target_bucket}"
   }
 
   versioning {
@@ -84,7 +89,6 @@ resource "aws_s3_bucket" "bucket_encrypt" {
 
   bucket        = "${var.bucket_organization}-${var.bucket_name}-${var.bucket_region}-${var.bucket_tier}"
   region        = "${var.bucket_region}"
-  policy        = "${data.aws_iam_policy_document.bucket.json}"
   acl           = "${var.acl}"
   force_destroy = "${var.force_destroy}"
 
@@ -109,10 +113,6 @@ resource "aws_s3_bucket" "bucket_encrypt" {
     expiration {
       days = "${var.expiration_days}"
     }
-  }
-
-  logging {
-    target_bucket = "${var.logging_target_bucket}"
   }
 
   versioning {
